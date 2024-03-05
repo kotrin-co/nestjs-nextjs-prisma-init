@@ -1,0 +1,60 @@
+version: "3.8"
+
+services:
+  nginx:
+    build:
+      context: ./docker/backend/nginx
+      dockerfile: Dockerfile
+    ports:
+      - 80:80
+    networks:
+      - locker-network
+    volumes:
+      - ./docker/backend/nginx/local.conf:/etc/nginx/conf.d/local.conf:cached
+    depends_on:
+      - server
+      - web
+
+  server:
+    build:
+      context: ./docker/backend/nestjs
+      dockerfile: Dockerfile
+    volumes:
+      - ./server:/server
+    ports:
+      - 3006:3000
+      - 5555:5555
+    networks:
+      - locker-network
+
+  web:
+    build:
+      context: ./docker/frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ./web:/web
+    ports:
+      - 4000:3000
+    networks:
+      - locker-network
+
+  postgres:
+    image: postgres:16
+    ports:
+      - 5434:5432
+    environment:
+      TZ: Asia/Tokyo
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: locker_dev_db
+    networks:
+      - locker-network
+    volumes:
+      - locker-postgres-data:/var/lib/postgresql/data:cached
+
+networks:
+  locker-network:
+    driver: bridge
+
+volumes:
+  locker-postgres-data:
